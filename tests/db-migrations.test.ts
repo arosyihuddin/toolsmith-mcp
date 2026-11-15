@@ -33,6 +33,8 @@ test("applies the consolidated initial migration to a fresh database", () => {
       .all() as Array<{ name: string }>)
       .map((row) => row.name);
 
+    expect(tables).toContain("upstream_servers");
+    expect(tables).toContain("upstream_tools");
     expect(tables).toContain("oauth_clients");
     expect(tables).toContain("oauth_codes");
     expect(tables).toContain("oauth_tokens");
@@ -40,7 +42,7 @@ test("applies the consolidated initial migration to a fresh database", () => {
     expect(tables).toContain("tool_permission_groups");
     expect(tables).toContain("workspace_recents");
     expect(sqlite.query("SELECT COUNT(*) AS count FROM tool_permission_groups").get()).toEqual({ count: 3 });
-    expect(sqlite.query("SELECT COUNT(*) AS count FROM __drizzle_migrations").get()).toEqual({ count: 1 });
+    expect(sqlite.query("SELECT COUNT(*) AS count FROM __drizzle_migrations").get()).toEqual({ count: 2 });
   });
 });
 
@@ -60,6 +62,6 @@ test("re-applies the baseline safely to an existing database without overwriting
 
     expect(sqlite.query("SELECT permission FROM tool_permission_groups WHERE section = ?").get("read_only")).toEqual({ permission: "blocked" });
     expect(sqlite.query("SELECT COUNT(*) AS count FROM tool_permission_groups").get()).toEqual({ count: 3 });
-    expect(sqlite.query("SELECT COUNT(*) AS count FROM __drizzle_migrations").get()).toEqual({ count: 2 });
+    expect(sqlite.query("SELECT COUNT(*) AS count FROM __drizzle_migrations").get()).toEqual({ count: 3 });
   });
 });

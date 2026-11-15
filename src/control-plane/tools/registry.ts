@@ -1,6 +1,6 @@
 import { asc } from "drizzle-orm";
 import { db } from "../db";
-import { toolConfigs } from "../db/schema";
+import { toolConfigs, upstreamServers, upstreamTools } from "../db/schema";
 import {
   getToolPermission,
   type CustomPermissionRule,
@@ -17,7 +17,8 @@ export type ToolCategory =
   | "code_development"
   | "terminal_execution"
   | "network_tunnels"
-  | "agent_workflow";
+  | "agent_workflow"
+  | "upstream";
 
 export type ToolCatalogEntry = {
   name: string;
@@ -251,6 +252,30 @@ export async function getToolCatalog(): Promise<ToolCatalogEntry[]> {
   >();
   for (const tool of staticTools)
     catalog.set(tool.name, { ...tool, category: categoryForTool(tool.name) });
+  // Upstream tools cached in the database (see modules/mcp/upstream).
+  // They appear in the dashboard catalog even when the upstream
+  // server is currently down; liveness is reported separately.
+  const upstreamRows = db.select().from(upstreamTools).all();
+  if (upstreamRows.length > 0) {
+    const serverRows = db.select().from(upstreamServers).all();
+    const serverNames = new Map(serverRows.map((row) => [row.id, row.name]));
+    for (const row of upstreamRows) {
+      let readOnly = false;
+      try {
+        const annotations = row.annotations ? (JSON.parse(row.annotations) as { readOnlyHint?: boolean }) : null;
+        readOnly = annotations?.readOnlyHint === true;
+      } catch {
+        readOnly = false;
+      }
+      catalog.set(row.exposedName, {
+        name: row.exposedName,
+        group: serverNames.get(row.serverId) ?? row.serverId,
+        category: "upstream",
+        risk: readOnly ? "low" : "medium",
+        description: row.description ?? row.name,
+      });
+    }
+  }
   const tools = [...catalog.values()];
 
   for (const tool of tools) ensureToolConfig(tool.name);

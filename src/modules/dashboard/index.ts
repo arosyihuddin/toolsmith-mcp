@@ -4,6 +4,7 @@ import { handleWorkspaceApi } from "./workspace-api";
 import { handleEventsApi } from "./events-api";
 import { handleTerminalApi } from "./terminal-api";
 import { handleToolsApi } from "./tools-api";
+import { handleUpstreamApi } from "./upstream-api.js";
 import { handleOverviewApi } from "./overview-api";
 import { handleRootCommandsApi } from "./root-commands-api";
 import { handleApprovalsApi } from "./approvals-api";
@@ -29,6 +30,9 @@ export async function handleDashboardRequest(request: Request): Promise<Response
 
   const toolsResponse = await handleToolsApi(request, url);
   if (toolsResponse) return toolsResponse;
+
+  const upstreamResponse = await handleUpstreamApi(request, url);
+  if (upstreamResponse) return upstreamResponse;
 
   const overviewResponse = await handleOverviewApi(request, url);
   if (overviewResponse) return overviewResponse;

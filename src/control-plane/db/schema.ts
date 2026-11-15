@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const toolConfigs = sqliteTable(
   "tool_configs",
@@ -119,3 +119,53 @@ export const oauthTokens = sqliteTable("oauth_tokens", {
   expiresAt: integer("expires_at").notNull(),
   createdAt: integer("created_at").notNull(),
 });
+
+export const upstreamServers = sqliteTable(
+  "upstream_servers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    transport: text("transport").notNull(),
+    command: text("command"),
+    args: text("args"),
+    env: text("env"),
+    cwd: text("cwd"),
+    url: text("url"),
+    authType: text("auth_type"),
+    authSecret: text("auth_secret"),
+    headers: text("headers"),
+    readRoots: text("read_roots"),
+    writeRoots: text("write_roots"),
+    timeoutMs: integer("timeout_ms").notNull().default(30000),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    status: text("status").notNull().default("down"),
+    lastError: text("last_error"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [index("idx_upstream_servers_updated_at").on(table.updatedAt)],
+);
+
+export const upstreamTools = sqliteTable(
+  "upstream_tools",
+  {
+    serverId: text("server_id").notNull(),
+    name: text("name").notNull(),
+    exposedName: text("exposed_name").notNull(),
+    description: text("description"),
+    inputSchema: text("input_schema"),
+    annotations: text("annotations"),
+    exposed: integer("exposed", { mode: "boolean" }).notNull().default(true),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.serverId, table.name] }),
+    index("idx_upstream_tools_server_id").on(table.serverId),
+    index("idx_upstream_tools_exposed_name").on(table.exposedName),
+  ],
+);
+
+export type UpstreamServer = typeof upstreamServers.$inferSelect;
+export type NewUpstreamServer = typeof upstreamServers.$inferInsert;
+export type UpstreamTool = typeof upstreamTools.$inferSelect;
+export type NewUpstreamTool = typeof upstreamTools.$inferInsert;

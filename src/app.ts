@@ -5,6 +5,7 @@ import { handleOAuthRequest, isOAuthEndpoint } from "./modules/auth/http";
 import { handleDashboardRequest } from "./modules/dashboard";
 import { createServer } from "./modules/mcp/server";
 import { terminalManager } from "./modules/terminal";
+import { upstreamManager } from "./modules/mcp/upstream/manager.js";
 import { stopAllTunnels } from "./modules/tunnels/manager";
 import { authorizeHttpRequest } from "./modules/auth/http-auth";
 import { config } from "./lib/config";
@@ -87,6 +88,7 @@ export async function startApplication() {
       await stopAllTunnels();
       await closeMcpHttpSessions();
       await terminalManager.disposeAll();
+      await upstreamManager.disposeAll();
       await server.close();
     })();
     return shutdownPromise;
